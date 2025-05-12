@@ -10,6 +10,10 @@ from io import BytesIO
 import os
 from src.models import db,Person, Attendance, AttendanceStatus
 from datetime import date
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
+from flask import send_file
+import io
 
 app = Flask(__name__, static_url_path='/static')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///person.db'
@@ -100,6 +104,35 @@ def attendance():
         'attendance.html',
         attendance_records=attendance_records,
         pagination=records
+    )
+
+@app.route('/export_attendance')
+def export_attendance():
+    wb = Workbook()
+    wb.remove(wb.active)  # Remove the default sheet
+
+    persons = Person.query.order_by(Person.name).all()
+    for person in persons:
+        ws = wb.create_sheet(title=person.name)
+        ws.append(['Date', 'Status'])
+        records = Attendance.query.filter_by(person_id=person.id).order_by(Attendance.date.desc()).all()
+        for record in records:
+            ws.append([record.date.strftime('%Y-%m-%d'), record.status.value])
+
+        # Optional: Set column widths
+        ws.column_dimensions[get_column_letter(1)].width = 15
+        ws.column_dimensions[get_column_letter(2)].width = 15
+
+    # Save to a bytes buffer
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name='attendance_records.xlsx',
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
 
 def process_frame(data):
