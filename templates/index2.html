@@ -9,7 +9,7 @@
 
 <body>
     <div class="container">
-        <h3>Find existing Person</h3>
+        <h3>Mark Attendance</h3>
 
         <div id="linkers">
             <a id="start" class="view-button">Start</a>
@@ -19,6 +19,7 @@
 
     </div>
     <div id="divi" class="container" style="display: none;">
+        <div id="timer" style="display:none; text-align:center; font-size:2em; color:#d9534f; margin-top:10px;"></div>
         <h3>Live Video Feed</h3>
         <video id="videoElement" autoplay></video>
         <div id="match_details" class="container" style="display: none;">
@@ -70,13 +71,41 @@
         const ctx = canvas.getContext('2d');
         let stream
         let capturing = false;
+        var timerDiv = document.getElementById('timer');
+        let countdown = 20;
+        let countdownInterval = null;
+        let noMatchTimer = null;
+        let frameInterval = null;
+
+        function startCountdown() {
+            countdown = 20;
+            timerDiv.style.display = 'block';
+            timerDiv.textContent = `Time left: ${countdown}s`;
+            countdownInterval = setInterval(() => {
+                countdown--;
+                timerDiv.textContent = `Time left: ${countdown}s`;
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    timerDiv.style.display = 'none';
+                    capturing = false;
+                    stopStreamingAndRecognition();
+                    showMessage(
+                        "Person doesn't exist.",
+                        5000,
+                        '/index2'
+                    );
+                }
+            }, 1000);
+        }
+
+        function stopCountdown() {
+            clearInterval(countdownInterval);
+            timerDiv.style.display = 'none';
+        }
         // Function to start streaming when the button is clicked
         start.addEventListener('click', async () => {
             try {
-                // Get media stream from the user's camera
                 stream = await navigator.mediaDevices.getUserMedia({ video: true });
-
-                // Assign the stream to the video element
                 videoElement.srcObject = stream;
                 noMatchDiv.style.display = 'none';
                 matchDetailsDiv.style.display = 'none';
@@ -85,20 +114,18 @@
                 capturing = true;
 
                 videoElement.addEventListener('play', () => {
-                    // Start capturing frames
                     setTimeout(() => {
-                        // Start capturing frames
-                        const captureInterval = setInterval(() => {
-                            // Check if capturing should continue
+                        startCountdown(); // Start the 20s countdown
+                        // Send one frame every 10 seconds
+                        frameInterval = setInterval(() => {
                             if (capturing) {
                                 captureAndSendFrame();
                             } else {
-                                // If not, clear the interval to stop capturing frames
-                                clearInterval(captureInterval);
+                                clearInterval(frameInterval);
                             }
-                        }, 1000 / 60); // Adjust frame rate as needed
+                        }, 2000); // 10,000 ms = 10 seconds
                     }, 3000);
-                });;
+                });
             } catch (error) {
                 console.error('Error accessing camera:', error);
             }
@@ -118,28 +145,53 @@
             noMatchDiv.style.display = 'none';
             matchDetailsDiv.style.display = 'none';
         });
-        socket.on('match_found', function (personDetails) {
-            noMatchDiv.style.display = 'none';
-            matchDetailsDiv.style.display = 'block';
-            personName.textContent = personDetails.name;
-            personAddress.textContent = personDetails.address;
-            personMobile.textContent = personDetails.mobile;
-            personEmail.textContent = personDetails.email;
-            image.src = "{{ url_for('static', filename='images/') }}" + personDetails.image;
-        });
-        socket.on('no_match', function () {
+
+        socket.on('match_found', function (data) {
+            stopCountdown();
+            clearTimeout(noMatchTimer);
             capturing = false;
             stopStreamingAndRecognition();
-            videoElement.style.display = 'none';
-            matchDetailsDiv.style.display = 'none';
-            noMatchDiv.style.display = 'block';
-            addNewPersonBtn.addEventListener('click', function () {
-                window.location.href = "{{ url_for('index1') }}";
-            });
-
+            showMessage(
+                `<img src="/static/images/${data.image}" style="width:100px;height:100px;border-radius:50%"><br>
+        <b>${data.name}</b> is <span style="color:green;">${data.message}</span>`,
+                5000,
+                '/index2'
+            );
         });
 
+        socket.on('no_match', function (data) {
+            if (!noMatchTimer) {
+                noMatchTimer = setTimeout(function () {
+                    showMessage(
+                        "Person doesn't exist.",
+                        5000,
+                        '/index2'
+                    );
+                }, 20000); // 20 seconds
+            }
+        });
+        function showMessage(msg, duration, redirectUrl) {
+            let div = document.createElement('div');
+            div.id = 'attendance-message';
+            div.style.position = 'fixed';
+            div.style.top = '30%';
+            div.style.left = '50%';
+            div.style.transform = 'translate(-50%, -50%)';
+            div.style.background = '#fff';
+            div.style.padding = '30px';
+            div.style.border = '2px solid #333';
+            div.style.borderRadius = '10px';
+            div.style.boxShadow = '0 0 10px #333';
+            div.style.textAlign = 'center';
+            div.style.zIndex = 9999;
+            div.innerHTML = msg;
+            document.body.appendChild(div);
 
+            setTimeout(function () {
+                div.remove();
+                window.location.href = redirectUrl;
+            }, duration);
+        }
         // Function to capture video frames and send them to the server
         function captureAndSendFrame() {
             canvas.width = videoElement.videoWidth;
@@ -164,16 +216,22 @@
             capturing = false;
             matchDetailsDiv.style.display = 'none';
             videoElement.pause();
-
-            // Stop all tracks in the stream
-            stream.getTracks().forEach(track => {
-                track.stop();
-            });
-
-            // Reset the video element source
+            if (stream) {
+                stream.getTracks().forEach(track => {
+                    track.stop();
+                });
+            }
             videoElement.srcObject = null;
-
+            divi.style.display = 'none';
+            noMatchDiv.style.display = 'none';
+            matchDetailsDiv.style.display = 'none';
+            timerDiv.style.display = 'none';
+            if (frameInterval) {
+                clearInterval(frameInterval);
+                frameInterval = null;
+            }
         }
+
     </script>
 </body>
 

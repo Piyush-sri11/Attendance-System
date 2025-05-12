@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Person Information</title>
+    <title>Person's Information</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
 
 <div class="container">
-    <h1>Person Information</h1>
+    <h1>Add Person</h1>
     <form action="/submit" method="post" enctype="multipart/form-data">
         <label for="name">Name:</label>
         <input type="text" id="name" name="name" required>
@@ -25,10 +25,10 @@
     </form>
 
     <div class="view-data">
-        <h2>Stored Data</h2>
+        <h2>All Person List</h2>
         
         <div id="linkers">
-            <a href="{{ url_for('stored_data') }}" class="view-button">View Stored Data</a>
+            <a href="{{ url_for('stored_data') }}" class="view-button">View People's List</a>
             <a href="{{ url_for('index') }}" class="view-button">Home Page</a>
         </div>
         

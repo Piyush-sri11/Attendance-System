@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Face Recognition App</title>
+    <title>Facial Recognition Attendance App</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
     <div  class="main">
     <div class="container">
-        <h1>Welcome my Assignment App</h1>
-        <a href="{{ url_for('index1') }}" class="task">Task 1</a>
-        <a href="{{ url_for('index2') }}" class="task">Task 2</a>
+        <h1>Facial Recognition Attendance App</h1>
+        <a href="{{ url_for('index1') }}" class="task">Add/View Person List</a>
+        <a href="{{ url_for('index2') }}" class="task">Mark Attendance</a>
+        <a href="{{ url_for('attendance') }}" class="task">View Attendance</a>
     </div>
 </div>
 </body>

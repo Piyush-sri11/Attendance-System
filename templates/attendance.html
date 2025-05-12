@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Records</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .container { max-width: 800px; margin: 40px auto; background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 8px #eee; }
+        h1 { text-align: center; margin-bottom: 2rem; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
+        th, td { padding: 0.75rem 1rem; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: #f8f8f8; }
+        tr:nth-child(even) { background: #fafafa; }
+        .pagination { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1rem; }
+        .pagination a, .pagination span {
+            padding: 0.5rem 0.9rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #333;
+            background: #f8f8f8;
+        }
+        .pagination .active {
+            background: #007bff;
+            color: #fff;
+            border-color: #007bff;
+            pointer-events: none;
+        }
+        .pagination .disabled {
+            color: #aaa;
+            pointer-events: none;
+            background: #f8f8f8;
+        }
+        a.button { display: inline-block; margin-top: 1rem; padding: 0.5rem 1.5rem; background: #007bff; color: #fff; border-radius: 4px; text-decoration: none; }
+        a.button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Attendance Records</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in attendance_records %}
+                <tr>
+                    <td>{{ record.name }}</td>
+                    <td>{{ record.date }}</td>
+                    <td>
+                        {% if record.status == 'Present' %}
+                            <span style="color: green; font-weight: bold;">{{ record.status }}</span>
+                        {% else %}
+                            <span style="color: red; font-weight: bold;">{{ record.status }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="pagination">
+            {% if pagination.has_prev %}
+                <a href="{{ url_for('attendance', page=1) }}">&laquo; First</a>
+                <a href="{{ url_for('attendance', page=pagination.prev_num) }}">Previous</a>
+            {% else %}
+                <span class="disabled">&laquo; First</span>
+                <span class="disabled">Previous</span>
+            {% endif %}
+
+            {% for p in range(1, pagination.pages + 1) %}
+                {% if p == pagination.page %}
+                    <span class="active">{{ p }}</span>
+                {% else %}
+                    <a href="{{ url_for('attendance', page=p) }}">{{ p }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if pagination.has_next %}
+                <a href="{{ url_for('attendance', page=pagination.next_num) }}">Next</a>
+                <a href="{{ url_for('attendance', page=pagination.pages) }}">Last &raquo;</a>
+            {% else %}
+                <span class="disabled">Next</span>
+                <span class="disabled">Last &raquo;</span>
+            {% endif %}
+        </div>
+        <a href="{{ url_for('index') }}" class="button">Back to Home</a>
+    </div>
+</body>
+</html>
